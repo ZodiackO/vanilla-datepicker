@@ -198,16 +198,43 @@
     return newDate.setHours(0, 0, 0, 0);
   }
 
+  /**
+   * Converts a year between different eras (e.g., Buddhist era).
+   * 
+   * @param {number|string} year - The year to be converted.
+   * @param {string} era - The era to convert to ("buddhist").
+   * @param {boolean} [revert=false] - Whether to revert the conversion (default is false).
+   * @returns {number} The converted year.
+   */
+  function convertYearEra(year, era, revert = false) {
+    // Ensure the year is treated as a number
+    let numericYear = Number(year);
+    
+    // Validate the numeric year
+    if (isNaN(numericYear)) {
+      throw new Error('Invalid year input');
+    }
+    
+    // Convert based on the specified era
+    switch (era) {
+      case 'buddhist':
+        return revert ? numericYear - 543 : numericYear + 543;
+      default:
+        // If the era is not recognized, return the year unchanged
+        return numericYear;
+    }
+  }
+
   // pattern for format parts
   const reFormatTokens = /dd?|DD?|mm?|MM?|yy?(?:yy)?/;
   // pattern for non date parts
   const reNonDateParts = /[\s!-/:-@[-`{-~年月日]+/;
   // cache for persed formats
   let knownFormats = {};
-  // parse funtions for date parts
+  // parse functions for date parts
   const parseFns = {
-    y(date, year) {
-      return new Date(date).setFullYear(parseInt(year, 10));
+    y(date, year, locale) {
+      return new Date(date).setFullYear(parseInt(convertYearEra(year, locale.yearEra, true), 10));
     },
     m(date, month, locale) {
       const newDate = new Date(date);
@@ -266,14 +293,14 @@
     MM(date, locale) {
       return locale.months[date.getMonth()];
     },
-    y(date) {
-      return date.getFullYear();
+    y(date, locale) {
+      return convertYearEra(date.getFullYear(), locale.yearEra);
     },
-    yy(date) {
-      return padZero(date.getFullYear(), 2).slice(-2);
+    yy(date, locale) {
+      return padZero(convertYearEra(date.getFullYear(), locale.yearEra), 2).slice(-2);
     },
-    yyyy(date) {
-      return padZero(date.getFullYear(), 4);
+    yyyy(date, locale) {
+      return padZero(convertYearEra(date.getFullYear(), locale.yearEra), 4);
     },
   };
 
@@ -294,7 +321,7 @@
       return knownFormats[format];
     }
 
-    // sprit the format string into parts and seprators
+    // sprit the format string into parts and separators
     const separators = format.split(reFormatTokens);
     const parts = format.match(new RegExp(reFormatTokens, 'g'));
     if (separators.length === 0 || !parts) {
@@ -328,12 +355,12 @@
           return dtParts;
         }, {});
 
-        // iterate over partParserkeys so that the parsing is made in the oder
+        // iterate over partParserkeys so that the parsing is made in the order
         // of year, month and day to prevent the day parser from correcting last
         // day of month wrongly
         return partParserKeys.reduce((origDate, key) => {
           const newDate = parseFns[key](origDate, dateParts[key], locale);
-          // ingnore the part failed to parse
+          // ignore the part failed to parse
           return isNaN(newDate) ? origDate : newDate;
         }, today());
       },
@@ -367,7 +394,7 @@
     return parseFormatString(format).parser(dateStr, locale);
   }
 
-  function formatDate(date, format, locale) {
+  function formatDate(date, format, locale, options) {
     if (isNaN(date) || (!date && date !== 0)) {
       return '';
     }
@@ -412,7 +439,7 @@
       return;
     }
     if (el.dataset.styleDisplay) {
-      // restore backed-up dispay property
+      // restore backed-up display property
       el.style.display = el.dataset.styleDisplay;
       delete el.dataset.styleDisplay;
     } else {
@@ -540,6 +567,7 @@
     daysOfWeekHighlighted: [],
     defaultViewDate: undefined, // placeholder, defaults to today() by the program
     disableTouchKeyboard: false,
+    displayYearEra: null, // buddhist, christian
     enableOnReadonly: true,
     format: 'mm/dd/yyyy',
     language: 'en',
@@ -641,7 +669,7 @@
       weekStart,
     } = datepicker.config || {};
 
-    // for backword compatibility
+    // for backward compatibility
     replaceOptions(inOpts, 'calendarWeeks', 'weekNumbers', val => val ? 1 : 0);
     replaceOptions(inOpts, 'clearBtn', 'clearButton');
     replaceOptions(inOpts, 'todayBtn', 'todayButton');
@@ -653,7 +681,7 @@
         if (locales[inOpts.language]) {
           lang = inOpts.language;
         } else {
-          // Check if langauge + region tag can fallback to the one without
+          // Check if language + region tag can fallback to the one without
           // region (e.g. fr-CA → fr)
           lang = inOpts.language.split('-')[0];
           if (!locales[lang]) {
@@ -1210,6 +1238,10 @@
         }
       }
 
+      if (options.displayYearEra) {
+        Object.assign(this.locale, { yearEra: options.displayYearEra });
+      }
+
       // update days-of-week when locale, daysOfweekDisabled or weekStart is changed
       if (updateDOW) {
         Array.from(this.dow.children).forEach((el, index) => {
@@ -1343,6 +1375,7 @@
 
     setOptions(options) {
       if (options.locale) {
+        this.locale = options.locale;
         this.monthNames = options.locale.monthsShort;
       }
       if ('minDate' in options) {
@@ -1374,6 +1407,9 @@
         this.beforeShow = typeof options.beforeShowMonth === 'function'
           ? options.beforeShowMonth
           : undefined;
+      }
+      if (options.displayYearEra) {
+        Object.assign(this.locale, { yearEra: options.displayYearEra });
       }
     }
 
@@ -1409,7 +1445,7 @@
     // Update the entire view UI
     render() {
       this.prepareForRender(
-        this.year,
+        convertYearEra(this.year, this.locale.yearEra),
         this.year <= this.minYear,
         this.year >= this.maxYear
       );
@@ -1498,6 +1534,12 @@
         const beforeShow = options[this.beforeShowOption];
         this.beforeShow = typeof beforeShow === 'function' ? beforeShow : undefined;
       }
+      if (options.locale) {
+        this.locale = options.locale;
+      }
+      if (options.displayYearEra) {
+        Object.assign(this.locale, { yearEra: options.displayYearEra });
+      }
     }
 
     // Update view's settings to reflect the viewDate set on the picker
@@ -1530,7 +1572,7 @@
     // Update the entire view UI
     render() {
       this.prepareForRender(
-        `${this.first}-${this.last}`,
+        `${convertYearEra(this.first, this.locale.yearEra)}-${convertYearEra(this.last, this.locale.yearEra)}`,
         this.first <= this.minYear,
         this.last >= this.maxYear
       );
@@ -1542,7 +1584,7 @@
         el.dataset.year = current;
         this.renderCell(
           el,
-          current,
+          convertYearEra(current, this.locale.yearEra),
           current,
           date,
           this,
@@ -1738,7 +1780,7 @@
 
   // Compute view date to reset, which will be...
   // - the last item of the selected dates or defaultViewDate if no selection
-  // - limitted to minDate or maxDate if it exceeds the range
+  // - limited to minDate or maxDate if it exceeds the range
   function computeResetViewDate(datepicker) {
     const {dates, config, rangeSideIndex} = datepicker;
     const viewDate = dates.length > 0
@@ -1773,7 +1815,7 @@
     return window.getComputedStyle(el).direction;
   }
 
-  // find the closet scrollable ancestor elemnt under the body
+  // find the closet scrollable ancestor element under the body
   function findScrollParents(el) {
     const parent = getParent(el);
     if (parent === document.body || !parent) {
@@ -2437,7 +2479,7 @@
         inputField.classList.add('datepicker-input');
         if (options.container) {
           // omit string type check because it doesn't guarantee to avoid errors
-          // (invalid selector string causes abend with sytax error)
+          // (invalid selector string causes abend with syntax error)
           config.container = options.container instanceof HTMLElement
             ? options.container
             : document.querySelector(options.container);
@@ -2454,7 +2496,7 @@
         }
         // attach itaelf to the rangepicker here so that processInputDates() can
         // determine if this is the range-end picker of the rangepicker while
-        // setting inital values when pickLevel > 0
+        // setting initial values when pickLevel > 0
         datepickers[index] = this;
         this.rangepicker = rangepicker;
         this.rangeSideIndex = index;
@@ -2551,7 +2593,7 @@
     }
 
     /**
-     * @type {Boolean} - Whether the picker element is shown. `true` whne shown
+     * @type {Boolean} - Whether the picker element is shown. `true` when shown
      */
     get active() {
       return !!(this.picker && this.picker.active);
@@ -2696,7 +2738,7 @@
      * objects, time values or mix of those for new selection
      * @param {Object} [options] - function options
      * - clear: {boolean} - Whether to clear the existing selection
-     *     defualt: false
+     *     default: false
      * - render: {boolean} - Whether to re-render the picker element
      *     default: true
      * - autohide: {boolean} - Whether to hide the picker element after re-render
@@ -2963,7 +3005,7 @@
           return datepickers.map(datepicker => datepicker.dates[0]);
         },
       });
-      // normalize the range if inital dates are given
+      // normalize the range if initial dates are given
       if (datepickers[0].dates.length > 0) {
         onChangeDate(this, {target: inputs[0]});
       } else if (datepickers[1].dates.length > 0) {

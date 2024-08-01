@@ -1,5 +1,5 @@
 import {pushUnique, createTagRepeat} from '../../lib/utils.js';
-import {dateValue, regularizeDate} from '../../lib/date.js';
+import {dateValue, regularizeDate, convertYearEra} from '../../lib/date.js';
 import {parseHTML} from '../../lib/dom.js';
 import View from './View.js';
 
@@ -40,6 +40,7 @@ export default class MonthsView extends View {
 
   setOptions(options) {
     if (options.locale) {
+      this.locale = options.locale;
       this.monthNames = options.locale.monthsShort;
     }
     if ('minDate' in options) {
@@ -71,6 +72,9 @@ export default class MonthsView extends View {
       this.beforeShow = typeof options.beforeShowMonth === 'function'
         ? options.beforeShowMonth
         : undefined;
+    }
+    if (options.displayYearEra) {
+      Object.assign(this.locale, { yearEra: options.displayYearEra });
     }
   }
 
@@ -106,7 +110,7 @@ export default class MonthsView extends View {
   // Update the entire view UI
   render() {
     this.prepareForRender(
-      this.year,
+      convertYearEra(this.year, this.locale.yearEra),
       this.year <= this.minYear,
       this.year >= this.maxYear
     );

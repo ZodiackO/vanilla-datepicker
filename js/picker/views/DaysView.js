@@ -96,6 +96,10 @@ export default class DaysView extends View {
       }
     }
 
+    if (options.displayYearEra) {
+      Object.assign(this.locale, { yearEra: options.displayYearEra });
+    }
+
     // update days-of-week when locale, daysOfweekDisabled or weekStart is changed
     if (updateDOW) {
       Array.from(this.dow.children).forEach((el, index) => {
