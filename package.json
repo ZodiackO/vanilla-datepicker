@@ -1,7 +1,7 @@
 {
-  "name": "vanillajs-datepicker",
-  "version": "1.3.4",
-  "description": "A vanilla JavaScript remake of bootstrap-datepicker for Bulma and other CSS frameworks",
+  "name": "vanilla-datepicker",
+  "version": "1.3.5",
+  "description": "A vanilla JavaScript remake of bootstrap-datepicker for Bulma and other CSS frameworks (support buddhist)",
   "type": "module",
   "module": "js/main.js",
   "exports": {
@@ -30,7 +30,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mymth/vanillajs-datepicker.git"
+    "url": "git+https://github.com/ZodiackO/vanilla-datepicker.git"
   },
   "keywords": [
     "datepicker",
@@ -40,7 +40,7 @@
     "javascript",
     "scss"
   ],
-  "author": "Hidenao Miyamoto",
+  "author": "ZodiackO & Hidenao Miyamoto",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/mymth/vanillajs-datepicker/issues"

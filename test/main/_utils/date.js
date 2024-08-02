@@ -140,10 +140,38 @@ var dateUtils = (function (exports) {
     return newDate.setHours(0, 0, 0, 0);
   }
 
+  /**
+   * Converts a year between different eras (e.g., Buddhist era).
+   * 
+   * @param {number|string} year - The year to be converted.
+   * @param {string} era - The era to convert to ("buddhist").
+   * @param {boolean} [revert=false] - Whether to revert the conversion (default is false).
+   * @returns {number} The converted year.
+   */
+  function convertYearEra(year, era, revert = false) {
+    // Ensure the year is treated as a number
+    let numericYear = Number(year);
+    
+    // Validate the numeric year
+    if (isNaN(numericYear)) {
+      throw new Error('Invalid year input');
+    }
+    
+    // Convert based on the specified era
+    switch (era) {
+      case 'buddhist':
+        return revert ? numericYear - 543 : numericYear + 543;
+      default:
+        // If the era is not recognized, return the year unchanged
+        return numericYear;
+    }
+  }
+
   exports.addDays = addDays;
   exports.addMonths = addMonths;
   exports.addWeeks = addWeeks;
   exports.addYears = addYears;
+  exports.convertYearEra = convertYearEra;
   exports.dateValue = dateValue;
   exports.dayOfTheWeekOf = dayOfTheWeekOf;
   exports.getIsoWeek = getIsoWeek;

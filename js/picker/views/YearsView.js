@@ -1,5 +1,5 @@
 import {pushUnique, createTagRepeat} from '../../lib/utils.js';
-import {dateValue, regularizeDate, startOfYearPeriod} from '../../lib/date.js';
+import {dateValue, regularizeDate, startOfYearPeriod, convertYearEra} from '../../lib/date.js';
 import {parseHTML} from '../../lib/dom.js';
 import View from './View.js';
 
@@ -50,6 +50,12 @@ export default class YearsView extends View {
       const beforeShow = options[this.beforeShowOption];
       this.beforeShow = typeof beforeShow === 'function' ? beforeShow : undefined;
     }
+    if (options.locale) {
+      this.locale = options.locale;
+    }
+    if (options.displayYearEra) {
+      Object.assign(this.locale, { yearEra: options.displayYearEra });
+    }
   }
 
   // Update view's settings to reflect the viewDate set on the picker
@@ -82,7 +88,7 @@ export default class YearsView extends View {
   // Update the entire view UI
   render() {
     this.prepareForRender(
-      `${this.first}-${this.last}`,
+      `${convertYearEra(this.first, this.locale.yearEra)}-${convertYearEra(this.last, this.locale.yearEra)}`,
       this.first <= this.minYear,
       this.last >= this.maxYear
     );
@@ -94,7 +100,7 @@ export default class YearsView extends View {
       el.dataset.year = current;
       this.renderCell(
         el,
-        current,
+        convertYearEra(current, this.locale.yearEra),
         current,
         date,
         this,

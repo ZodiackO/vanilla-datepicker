@@ -1,4 +1,4 @@
-import {stripTime, today} from './date.js';
+import {stripTime, today, convertYearEra} from './date.js';
 import {lastItemOf} from './utils.js';
 
 // pattern for format parts
@@ -9,8 +9,8 @@ export const reNonDateParts = /[\s!-/:-@[-`{-~年月日]+/;
 let knownFormats = {};
 // parse functions for date parts
 const parseFns = {
-  y(date, year) {
-    return new Date(date).setFullYear(parseInt(year, 10));
+  y(date, year, locale) {
+    return new Date(date).setFullYear(parseInt(convertYearEra(year, locale.yearEra, true), 10));
   },
   m(date, month, locale) {
     const newDate = new Date(date);
@@ -69,14 +69,14 @@ const formatFns = {
   MM(date, locale) {
     return locale.months[date.getMonth()];
   },
-  y(date) {
-    return date.getFullYear();
+  y(date, locale) {
+    return convertYearEra(date.getFullYear(), locale.yearEra);
   },
-  yy(date) {
-    return padZero(date.getFullYear(), 2).slice(-2);
+  yy(date, locale) {
+    return padZero(convertYearEra(date.getFullYear(), locale.yearEra), 2).slice(-2);
   },
-  yyyy(date) {
-    return padZero(date.getFullYear(), 4);
+  yyyy(date, locale) {
+    return padZero(convertYearEra(date.getFullYear(), locale.yearEra), 4);
   },
 };
 
@@ -170,7 +170,7 @@ export function parseDate(dateStr, format, locale) {
   return parseFormatString(format).parser(dateStr, locale);
 }
 
-export function formatDate(date, format, locale) {
+export function formatDate(date, format, locale, options) {
   if (isNaN(date) || (!date && date !== 0)) {
     return '';
   }
